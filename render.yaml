@@ -1,7 +1,11 @@
 services:
   - type: web
     name: gitlab-chatbot-backend
-    env: node
+    runtime: node
+    plan: free
+    region: oregon
+    repo: https://github.com/akhil2510/gitLabChatBot_private
+    branch: main
     buildCommand: cd backend && npm install
     startCommand: cd backend && npm start
     envVars:
