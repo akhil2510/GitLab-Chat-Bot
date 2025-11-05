@@ -15,9 +15,26 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
+// CORS configuration
+// Support a comma-separated list in FRONTEND_URL (e.g. "https://site1.com,https://site2.com")
+const rawOrigins = process.env.FRONTEND_URL || '';
+const allowedOrigins = rawOrigins.split(',').map(s => s.trim()).filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true
+  origin: function (origin, callback) {
+    // allow requests with no origin (curl, server-to-server)
+    if (!origin) return callback(null, true);
+
+    // if no allowed origins configured, allow all origins (safe for quick testing)
+    if (allowedOrigins.length === 0) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS policy: origin not allowed'));
+  },
+  // only enable credentials when specific origins are configured
+  credentials: allowedOrigins.length > 0
 }));
 
 // Body parsing middleware
