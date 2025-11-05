@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: gitlab-chatbot-backend
+    env: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_ENVIRONMENT
+        value: gcp-starter
+      - key: PINECONE_INDEX
+        value: gitlab-handbook
+      - key: HUGGINGFACE_API_KEY
+        sync: false
+      - key: EMBEDDING_PROVIDER
+        value: huggingface
