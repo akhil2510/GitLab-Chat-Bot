@@ -519,43 +519,6 @@
             border-color: #667eea;
         }
 
-        .history-dropdown {
-            position: absolute;
-            bottom: 100%;
-            left: 0;
-            right: 60px;
-            background: var(--container-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            margin-bottom: 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            box-shadow: 0 -4px 12px var(--shadow-color);
-            display: none;
-            z-index: 10;
-        }
-
-        .history-dropdown.show {
-            display: block;
-        }
-
-        .history-item {
-            padding: 10px 16px;
-            cursor: pointer;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 13px;
-            color: var(--text-primary);
-            transition: background 0.2s;
-        }
-
-        .history-item:last-child {
-            border-bottom: none;
-        }
-
-        .history-item:hover {
-            background: rgba(102, 126, 234, 0.1);
-        }
-
         .send-button {
             padding: 12px 24px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -908,7 +871,6 @@
         </div>
 
         <div class="chat-input-container">
-            <div id="historyDropdown" class="history-dropdown"></div>
             <div class="chat-input-wrapper">
                 <input 
                     type="text" 
@@ -917,7 +879,6 @@
                     placeholder="Ask about GitLab..." 
                     onkeypress="handleKeyPress(event)"
                     oninput="updateCharCounter()"
-                    onfocus="showSearchHistory()"
                     maxlength="500"
                 >
                 <button class="send-button" id="sendButton" onclick="sendMessage()">Send</button>
@@ -1092,64 +1053,6 @@
             }
         }
 
-        function saveToSearchHistory(query) {
-            // Remove if already exists
-            searchHistory = searchHistory.filter(q => q !== query);
-            
-            // Add to front
-            searchHistory.unshift(query);
-            
-            // Keep only last 10
-            if (searchHistory.length > 10) {
-                searchHistory = searchHistory.slice(0, 10);
-            }
-            
-            localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
-        }
-
-        function showSearchHistory() {
-            const dropdown = document.getElementById('historyDropdown');
-            const input = document.getElementById('chatInput');
-            
-            if (searchHistory.length === 0 || input.value.length > 0) {
-                dropdown.classList.remove('show');
-                return;
-            }
-            
-            let html = '';
-            searchHistory.forEach(query => {
-                html += `<div class="history-item" onclick="selectHistory('${query.replace(/'/g, "\\'")}')">${escapeHtml(query)}</div>`;
-            });
-            
-            dropdown.innerHTML = html;
-            dropdown.classList.add('show');
-        }
-
-        function selectHistory(query) {
-            document.getElementById('chatInput').value = query;
-            document.getElementById('historyDropdown').classList.remove('show');
-            updateCharCounter();
-            document.getElementById('chatInput').focus();
-        }
-
-        function clearSearchHistory() {
-            if (confirm('Clear search history?')) {
-                searchHistory = [];
-                localStorage.removeItem('searchHistory');
-                document.getElementById('historyDropdown').classList.remove('show');
-                showToast('Search history cleared!', 'success');
-            }
-        }
-
-        // Hide dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            const dropdown = document.getElementById('historyDropdown');
-            const input = document.getElementById('chatInput');
-            if (e.target !== input && !dropdown.contains(e.target)) {
-                dropdown.classList.remove('show');
-            }
-        });
-
         function handleKeyPress(event) {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
@@ -1276,9 +1179,6 @@
 
             // Store query for keyboard navigation
             lastUserQuery = query;
-            
-            // Save to search history
-            saveToSearchHistory(query);
 
             // Disable input
             input.disabled = true;
