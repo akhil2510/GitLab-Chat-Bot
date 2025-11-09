@@ -182,6 +182,21 @@
             color: white;
         }
 
+        .hallucination-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ff9800;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #856404;
+        }
+
+        .hallucination-warning strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
         /* Feedback buttons */
         .feedback-buttons {
             display: flex;
@@ -592,11 +607,25 @@
 
             const confidenceClass = data.confidence || 'medium';
             
+            // Add warning for low confidence answers
+            let warningHtml = '';
+            if (confidenceClass === 'low' || confidenceClass === 'medium') {
+                warningHtml = `
+                    <div class="hallucination-warning">
+                        <strong>⚠️ Limited Information</strong>
+                        ${confidenceClass === 'low' ? 
+                          'The available documentation may not fully answer your question. Please verify with official GitLab sources.' :
+                          'This answer is based on limited context. Consider checking multiple sources for complete information.'}
+                    </div>
+                `;
+            }
+            
             messageDiv.innerHTML = `
                 <div class="message-avatar">🤖</div>
                 <div class="message-content">
                     <p>${escapeHtml(data.answer)}</p>
                     ${sourcesHtml}
+                    ${warningHtml}
                     <div>
                         <span class="confidence ${confidenceClass}">${confidenceClass.toUpperCase()} CONFIDENCE</span>
                     </div>

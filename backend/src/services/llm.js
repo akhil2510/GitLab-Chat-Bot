@@ -57,21 +57,33 @@ class LLMService {
   createSystemPrompt() {
     return `You are a helpful AI assistant specialized in GitLab's Handbook and Direction pages. Your role is to help GitLab employees and aspiring employees learn about GitLab's processes, values, and strategic direction.
 
+CRITICAL ANTI-HALLUCINATION RULES:
+1. Answer ONLY using information from the provided sources below
+2. Do NOT use any external knowledge or assumptions about GitLab
+3. If the sources don't contain the answer, respond: "I don't have information about that in the available GitLab documentation. Please check [suggest relevant section]."
+4. When making claims, include direct quotes from sources using quotation marks
+5. Reference sources by number: [Source 1], [Source 2], etc.
+
 GUIDELINES:
-1. Answer questions based ONLY on the provided context from GitLab's documentation
-2. If the context doesn't contain enough information to answer the question, clearly state that
-3. Always cite your sources by mentioning the relevant section or page
-4. Be concise but comprehensive in your answers
-5. If asked about topics outside GitLab's handbook/direction, politely redirect to relevant documentation
+1. Stay strictly within the provided context
+2. If uncertain, say so explicitly - NEVER guess
+3. Cite sources for every major claim
+4. Be concise but comprehensive
+5. If asked about topics outside GitLab's handbook/direction, say: "This topic isn't covered in my knowledge base."
 6. Maintain a professional and helpful tone
-7. If you're uncertain, express that uncertainty rather than making up information
+
+REQUIRED FORMAT:
+- Start with a direct answer based on sources
+- Include relevant quotes: "According to [Source X]: 'direct quote...'"
+- End with source references
 
 TRANSPARENCY:
 - Always indicate which sources you're using
-- If multiple sources provide conflicting information, mention that
+- If multiple sources provide conflicting information, mention that explicitly
 - Distinguish between direct quotes and paraphrased information
+- If you're paraphrasing, indicate: "Based on [Source X]..."
 
-Remember: Your knowledge is limited to GitLab's official Handbook and Direction pages. Do not make assumptions or provide information from outside these sources.`;
+Remember: Accuracy over completeness. It's better to say "I don't know" than to make up information.`;
   }
 
   /**
@@ -133,30 +145,85 @@ Remember: Your knowledge is limited to GitLab's official Handbook and Direction 
    * Assess response confidence based on context relevance
    */
   assessConfidence(response, context) {
-    // Simple heuristic: check if response contains uncertainty phrases
+    const lowerResponse = response.toLowerCase();
+    const lowerContext = context.toLowerCase();
+    
+    // Check for explicit uncertainty phrases
     const uncertaintyPhrases = [
       'i don\'t know',
       'i\'m not sure',
       'i cannot find',
       'not mentioned',
       'doesn\'t contain',
-      'no information about'
+      'no information about',
+      'i don\'t have information'
     ];
     
-    const lowConfidence = uncertaintyPhrases.some(phrase => 
-      response.toLowerCase().includes(phrase)
+    const hasUncertainty = uncertaintyPhrases.some(phrase => 
+      lowerResponse.includes(phrase)
     );
     
-    if (lowConfidence) {
+    if (hasUncertainty) {
       return 'low';
     }
     
-    // Check if response is substantially longer than context (potential hallucination)
+    // Check for hallucination indicators
+    // 1. Response much longer than context (making up details)
     if (response.length > context.length * 1.5) {
+      logger.warn('Potential hallucination: Response significantly longer than context');
+      return 'medium';
+    }
+    
+    // 2. Check if response contains source citations
+    const hasCitations = /\[source \d+\]/i.test(lowerResponse) || 
+                        /".*?"/i.test(response); // Has quotes
+    
+    if (!hasCitations && context.length > 0) {
+      logger.warn('Potential hallucination: No citations in response despite available context');
+      return 'medium';
+    }
+    
+    // 3. Extract key claims from response and verify against context
+    const verificationScore = this.verifyClaimsInContext(response, context);
+    
+    if (verificationScore < 0.5) {
+      logger.warn(`Potential hallucination: Low verification score (${verificationScore.toFixed(2)})`);
+      return 'low';
+    } else if (verificationScore < 0.8) {
       return 'medium';
     }
     
     return 'high';
+  }
+
+  /**
+   * Verify if response claims exist in context
+   */
+  verifyClaimsInContext(response, context) {
+    // Extract sentences from response (simple split by period)
+    const sentences = response.split(/[.!?]/).filter(s => s.trim().length > 20);
+    
+    if (sentences.length === 0) return 1.0;
+    
+    let verifiedCount = 0;
+    const contextLower = context.toLowerCase();
+    
+    sentences.forEach(sentence => {
+      // Extract meaningful words (3+ chars, not common words)
+      const words = sentence.toLowerCase()
+        .split(/\s+/)
+        .filter(w => w.length > 3 && !['this', 'that', 'with', 'from', 'have', 'been'].includes(w));
+      
+      // Check if significant portion of words exist in context
+      const matchingWords = words.filter(w => contextLower.includes(w));
+      const matchRatio = words.length > 0 ? matchingWords.length / words.length : 0;
+      
+      if (matchRatio > 0.5) {
+        verifiedCount++;
+      }
+    });
+    
+    return sentences.length > 0 ? verifiedCount / sentences.length : 1.0;
   }
 
   /**
