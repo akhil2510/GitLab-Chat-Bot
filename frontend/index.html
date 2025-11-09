@@ -1428,9 +1428,9 @@
                 `;
             }
             
-            // Add query suggestions for low confidence
+            // Add query suggestions for low/medium confidence
             let suggestionsHtml = '';
-            if (confidenceClass === 'low') {
+            if (confidenceClass === 'low' || confidenceClass === 'medium') {
                 const suggestions = getQuerySuggestions(originalQuery);
                 if (suggestions.length > 0) {
                     suggestionsHtml = '<div class="suggestions" style="margin-top: 10px;"><strong>Try asking:</strong>';
@@ -1569,6 +1569,8 @@
                 'onboarding': ['What is GitLab\'s onboarding process?', 'How does GitLab train new employees?', 'What should I expect in my first week?'],
                 'meeting': ['How does GitLab run meetings?', 'What are GitLab\'s meeting best practices?', 'Does GitLab have all-hands meetings?'],
                 'product': ['What is GitLab\'s product strategy?', 'How does GitLab plan features?', 'What is GitLab\'s product vision?'],
+                'work': ['How does GitLab work remotely?', 'What is GitLab\'s work culture?', 'How does async work at GitLab?'],
+                'team': ['How does GitLab organize teams?', 'What are GitLab\'s team structures?', 'How do GitLab teams collaborate?'],
             };
             
             // Find relevant suggestions based on keywords in query
@@ -1579,7 +1581,7 @@
                 }
             }
             
-            // Default suggestions if no match
+            // Default suggestions if no match or gibberish input
             if (suggestions.length === 0) {
                 suggestions.push(
                     'What are GitLab values?',
