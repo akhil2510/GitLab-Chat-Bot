@@ -6,9 +6,10 @@ services:
     region: oregon
     repo: https://github.com/akhil2510/gitLabChatBot_private
     branch: main
-    autoDeploy: true  # Enable auto-deploy on push
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && npm start
+    autoDeploy: true
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
