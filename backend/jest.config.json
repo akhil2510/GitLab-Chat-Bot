@@ -8,9 +8,5 @@
   "testMatch": [
     "**/tests/**/*.test.js"
   ],
-  "transform": {},
-  "extensionsToTreatAsEsm": [".js"],
-  "globals": {
-    "NODE_OPTIONS": "--experimental-vm-modules"
-  }
+  "transform": {}
 }
