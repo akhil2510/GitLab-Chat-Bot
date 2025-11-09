@@ -39,6 +39,7 @@
             padding: 20px;
             text-align: center;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
         }
 
         .chat-header h1 {
@@ -49,6 +50,25 @@
         .chat-header p {
             font-size: 14px;
             opacity: 0.9;
+        }
+
+        .clear-history-btn {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .clear-history-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .chat-messages {
@@ -162,6 +182,49 @@
             color: white;
         }
 
+        /* Feedback buttons */
+        .feedback-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .feedback-btn {
+            background: transparent;
+            border: 1px solid #e0e0e0;
+            padding: 6px 12px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .feedback-btn:hover:not(:disabled) {
+            background: #f5f5f5;
+            border-color: #667eea;
+        }
+
+        .feedback-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .feedback-btn.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .feedback-btn.selected.negative {
+            background: #f44336;
+            border-color: #f44336;
+        }
+
         .chat-input-container {
             padding: 20px;
             background: white;
@@ -222,21 +285,31 @@
             display: block;
         }
 
-        .typing-indicator span {
+        .typing-indicator .status-text {
+            font-size: 13px;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .typing-indicator .dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-indicator .dots span {
             height: 8px;
             width: 8px;
             background: #667eea;
             border-radius: 50%;
             display: inline-block;
-            margin: 0 2px;
             animation: bounce 1.4s infinite;
         }
 
-        .typing-indicator span:nth-child(2) {
+        .typing-indicator .dots span:nth-child(2) {
             animation-delay: 0.2s;
         }
 
-        .typing-indicator span:nth-child(3) {
+        .typing-indicator .dots span:nth-child(3) {
             animation-delay: 0.4s;
         }
 
@@ -305,6 +378,7 @@
         <div class="chat-header">
             <h1>🦊 GitLab AI Chatbot</h1>
             <p>Ask me anything about GitLab's Handbook & Direction</p>
+            <button class="clear-history-btn" onclick="clearHistory()">🔄 Clear History</button>
         </div>
 
         <div class="chat-messages" id="chatMessages">
@@ -337,20 +411,16 @@
 
     <script>
         // Environment-aware API URL
-        // For local development, it uses localhost
-        // For production, set BACKEND_URL in your hosting (or it uses default)
         const getApiUrl = () => {
-            // Check if running locally
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                 return 'http://localhost:3000/api/chat';
             }
-            
-            // Production: Use your deployed backend
             return 'https://gitlabchatbot-private-1.onrender.com/api/chat';
         };
         
         const API_URL = getApiUrl();
         let sessionId = generateSessionId();
+        let currentStatus = '';
         
         console.log('🚀 Using API URL:', API_URL);
 
@@ -370,6 +440,38 @@
             sendMessage();
         }
 
+        async function clearHistory() {
+            if (!confirm('Clear conversation history?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/clear`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ sessionId })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Clear UI
+                    const messagesContainer = document.getElementById('chatMessages');
+                    messagesContainer.innerHTML = `
+                        <div class="message bot">
+                            <div class="message-avatar">🤖</div>
+                            <div class="message-content">
+                                <p>History cleared! How can I help you?</p>
+                            </div>
+                        </div>
+                    `;
+                    sessionId = generateSessionId();
+                }
+            } catch (error) {
+                console.error('Error clearing history:', error);
+            }
+        }
+
         async function sendMessage() {
             const input = document.getElementById('chatInput');
             const sendButton = document.getElementById('sendButton');
@@ -386,19 +488,29 @@
             addMessage('user', query);
             input.value = '';
 
-            // Show typing indicator
+            // Show typing indicator with status
             const typingDiv = document.createElement('div');
             typingDiv.className = 'message bot';
+            typingDiv.id = 'typingIndicator';
             typingDiv.innerHTML = `
                 <div class="message-avatar">🤖</div>
                 <div class="typing-indicator active">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                    <div class="status-text">Searching sources...</div>
+                    <div class="dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
                 </div>
             `;
             messagesContainer.appendChild(typingDiv);
             scrollToBottom();
+
+            // Simulate status change
+            setTimeout(() => {
+                const statusText = typingDiv.querySelector('.status-text');
+                if (statusText) statusText.textContent = 'Generating answer...';
+            }, 1500);
 
             try {
                 const response = await fetch(`${API_URL}/query`, {
@@ -418,13 +530,14 @@
                 typingDiv.remove();
 
                 if (data.success) {
-                    addBotResponse(data.data);
+                    addBotResponse(data.data, query);
                 } else {
-                    addError(data.error?.message || 'Failed to get response');
+                    addError(data.error?.message || 'Failed to get response', data.error?.details);
                 }
             } catch (error) {
                 typingDiv.remove();
-                addError('Network error. Make sure the backend server is running.');
+                addError('Network error. Please check your connection and try again.', 
+                        'Make sure the backend server is running at ' + API_URL);
                 console.error('Error:', error);
             }
 
@@ -452,10 +565,11 @@
             scrollToBottom();
         }
 
-        function addBotResponse(data) {
+        function addBotResponse(data, originalQuery) {
             const messagesContainer = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message bot';
+            messageDiv.setAttribute('data-message-id', generateMessageId());
             
             let sourcesHtml = '';
             if (data.sources && data.sources.length > 0) {
@@ -471,6 +585,7 @@
             }
 
             const confidenceClass = data.confidence || 'medium';
+            const messageId = messageDiv.getAttribute('data-message-id');
             
             messageDiv.innerHTML = `
                 <div class="message-avatar">🤖</div>
@@ -480,6 +595,14 @@
                     <div>
                         <span class="confidence ${confidenceClass}">${confidenceClass.toUpperCase()} CONFIDENCE</span>
                     </div>
+                    <div class="feedback-buttons">
+                        <button class="feedback-btn" onclick="submitFeedback('${messageId}', 'positive', '${escapeForJs(originalQuery)}', '${escapeForJs(data.answer)}', ${JSON.stringify(data.sources || [])})">
+                            👍 Helpful
+                        </button>
+                        <button class="feedback-btn" onclick="submitFeedback('${messageId}', 'negative', '${escapeForJs(originalQuery)}', '${escapeForJs(data.answer)}', ${JSON.stringify(data.sources || [])})">
+                            👎 Not helpful
+                        </button>
+                    </div>
                 </div>
             `;
             
@@ -487,11 +610,61 @@
             scrollToBottom();
         }
 
-        function addError(message) {
+        async function submitFeedback(messageId, rating, query, answer, sources) {
+            const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+            const buttons = messageDiv.querySelectorAll('.feedback-btn');
+            
+            // Disable buttons
+            buttons.forEach(btn => btn.disabled = true);
+            
+            // Highlight selected button
+            const selectedBtn = Array.from(buttons).find(btn => 
+                btn.textContent.includes(rating === 'positive' ? 'Helpful' : 'Not helpful')
+            );
+            selectedBtn.classList.add('selected');
+            if (rating === 'negative') {
+                selectedBtn.classList.add('negative');
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/feedback`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sessionId,
+                        query: decodeURIComponent(query),
+                        answer: decodeURIComponent(answer),
+                        sources,
+                        rating,
+                        comment: ''
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    selectedBtn.textContent = rating === 'positive' ? '✓ Thank you!' : '✓ Feedback noted';
+                    console.log('Feedback submitted:', data);
+                } else {
+                    console.error('Failed to submit feedback:', data.error);
+                }
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+                selectedBtn.textContent = '❌ Failed';
+                buttons.forEach(btn => btn.disabled = false);
+            }
+        }
+
+        function addError(message, details) {
             const messagesContainer = document.getElementById('chatMessages');
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error-message';
-            errorDiv.textContent = '❌ ' + message;
+            errorDiv.innerHTML = `
+                <strong>❌ ${escapeHtml(message)}</strong>
+                ${details ? `<br><small>${escapeHtml(details)}</small>` : ''}
+            `;
             messagesContainer.appendChild(errorDiv);
             scrollToBottom();
         }
@@ -500,6 +673,14 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function escapeForJs(text) {
+            return encodeURIComponent(text);
+        }
+
+        function generateMessageId() {
+            return 'msg_' + Math.random().toString(36).substr(2, 9);
         }
 
         function scrollToBottom() {

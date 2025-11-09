@@ -24,6 +24,8 @@ data/processed/
 data/*.db
 *.sqlite
 *.db
+backend/data/feedback.json
+data/feedback.json
 
 # IDE
 .vscode/

@@ -13,6 +13,15 @@ const schemas = {
   
   sessionId: Joi.object({
     sessionId: Joi.string().required().min(1).max(100)
+  }),
+  
+  feedback: Joi.object({
+    sessionId: Joi.string().required().min(1).max(100),
+    query: Joi.string().required().min(1).max(1000),
+    answer: Joi.string().required().min(1),
+    sources: Joi.array().items(Joi.object()).optional(),
+    rating: Joi.string().valid('positive', 'negative').required(),
+    comment: Joi.string().optional().max(500).allow('')
   })
 };
 
