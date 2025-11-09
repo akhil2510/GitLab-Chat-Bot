@@ -569,7 +569,13 @@
             const messagesContainer = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message bot';
-            messageDiv.setAttribute('data-message-id', generateMessageId());
+            const messageId = generateMessageId();
+            messageDiv.setAttribute('data-message-id', messageId);
+            
+            // Store data in element for later use
+            messageDiv.dataset.query = originalQuery;
+            messageDiv.dataset.answer = data.answer;
+            messageDiv.dataset.sources = JSON.stringify(data.sources || []);
             
             let sourcesHtml = '';
             if (data.sources && data.sources.length > 0) {
@@ -585,7 +591,6 @@
             }
 
             const confidenceClass = data.confidence || 'medium';
-            const messageId = messageDiv.getAttribute('data-message-id');
             
             messageDiv.innerHTML = `
                 <div class="message-avatar">🤖</div>
@@ -596,30 +601,44 @@
                         <span class="confidence ${confidenceClass}">${confidenceClass.toUpperCase()} CONFIDENCE</span>
                     </div>
                     <div class="feedback-buttons">
-                        <button class="feedback-btn" onclick="submitFeedback('${messageId}', 'positive', '${escapeForJs(originalQuery)}', '${escapeForJs(data.answer)}', ${JSON.stringify(data.sources || [])})">
+                        <button class="feedback-btn" data-rating="positive">
                             👍 Helpful
                         </button>
-                        <button class="feedback-btn" onclick="submitFeedback('${messageId}', 'negative', '${escapeForJs(originalQuery)}', '${escapeForJs(data.answer)}', ${JSON.stringify(data.sources || [])})">
-                            👎 Not helpful
+                        <button class="feedback-btn" data-rating="negative">
+                            � Not helpful
                         </button>
                     </div>
                 </div>
             `;
             
+            // Add event listeners to feedback buttons
+            const feedbackButtons = messageDiv.querySelectorAll('.feedback-btn');
+            feedbackButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const rating = btn.dataset.rating;
+                    submitFeedback(messageId, rating);
+                });
+            });
+            
             messagesContainer.appendChild(messageDiv);
             scrollToBottom();
         }
 
-        async function submitFeedback(messageId, rating, query, answer, sources) {
+        async function submitFeedback(messageId, rating) {
             const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (!messageDiv) return;
+            
             const buttons = messageDiv.querySelectorAll('.feedback-btn');
+            const query = messageDiv.dataset.query;
+            const answer = messageDiv.dataset.answer;
+            const sources = JSON.parse(messageDiv.dataset.sources || '[]');
             
             // Disable buttons
             buttons.forEach(btn => btn.disabled = true);
             
             // Highlight selected button
             const selectedBtn = Array.from(buttons).find(btn => 
-                btn.textContent.includes(rating === 'positive' ? 'Helpful' : 'Not helpful')
+                btn.dataset.rating === rating
             );
             selectedBtn.classList.add('selected');
             if (rating === 'negative') {
@@ -634,8 +653,8 @@
                     },
                     body: JSON.stringify({
                         sessionId,
-                        query: decodeURIComponent(query),
-                        answer: decodeURIComponent(answer),
+                        query,
+                        answer,
                         sources,
                         rating,
                         comment: ''
