@@ -2,6 +2,7 @@ import VectorStore from './vectorStore.js';
 import LLMService from './llm.js';
 import TextProcessor from '../utils/textProcessor.js';
 import ConversationStore from '../utils/conversationStore.js';
+import { handleGreeting } from '../utils/greetingHandler.js';
 import logger from '../utils/logger.js';
 import config from '../config/index.js';
 import NodeCache from 'node-cache';
@@ -99,6 +100,26 @@ class RAGService {
       const startTime = Date.now();
       
       logger.info(`Processing query: "${userQuery}" [session: ${sessionId}]`);
+      
+      // Check if query is a greeting or casual message
+      const greetingResponse = handleGreeting(userQuery);
+      if (greetingResponse) {
+        // Add to conversation history
+        this.addToConversationHistory(sessionId, {
+          role: 'user',
+          content: userQuery
+        });
+        this.addToConversationHistory(sessionId, {
+          role: 'assistant',
+          content: greetingResponse.answer
+        });
+        
+        return {
+          ...greetingResponse,
+          query: userQuery,
+          sessionId
+        };
+      }
       
       // Normalize query
       const normalizedQuery = this.textProcessor.normalizeQuery(userQuery);
