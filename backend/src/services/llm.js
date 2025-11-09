@@ -226,27 +226,53 @@ Remember: Accuracy over completeness. It's better to say "I don't know" than to 
   }
 
   /**
-   * Expand query for better retrieval
+   * Rewrite user query to better search query for retrieval
+   * Understands intent and extracts key concepts without hallucination
    */
-  async expandQuery(query) {
+  async rewriteQuery(userQuery) {
     try {
-      const prompt = `Given the following question about GitLab, generate 2-3 alternative phrasings or related questions that would help retrieve relevant information:
+      const prompt = `You are a search query optimizer for GitLab's Handbook and Direction documentation.
 
-Question: ${query}
+USER QUERY: "${userQuery}"
 
-Alternative phrasings (one per line):`;
+YOUR TASK:
+1. Identify the core intent and key concepts
+2. Generate 1-3 optimized search queries that would find relevant GitLab documentation
+3. ONLY use concepts that appear in the original query - do NOT add external knowledge
+4. Make queries more specific and searchable
+
+RULES:
+- Keep the same domain (GitLab)
+- Don't add information not in the original query
+- Focus on searchable keywords
+- One query per line
+
+OPTIMIZED SEARCH QUERIES:`;
       
       const result = await this.model.generateContent(prompt);
-      const expansions = result.response.text()
+      const rewrittenQueries = result.response.text()
         .split('\n')
-        .filter(line => line.trim().length > 0)
-        .slice(0, 3);
+        .map(line => line.replace(/^[-•*]\s*/, '').trim()) // Remove bullets
+        .filter(line => line.length > 5 && line.length < 200)
+        .slice(0, 3); // Max 3 queries
       
-      return [query, ...expansions];
+      if (rewrittenQueries.length === 0) {
+        return [userQuery];
+      }
+      
+      logger.info(`Query rewritten: "${userQuery}" -> [${rewrittenQueries.join(', ')}]`);
+      return rewrittenQueries;
     } catch (error) {
-      logger.warn(`Query expansion failed: ${error.message}`);
-      return [query]; // Return original query on failure
+      logger.warn(`Query rewriting failed: ${error.message}`);
+      return [userQuery];
     }
+  }
+
+  /**
+   * Expand query for better retrieval (legacy method - use rewriteQuery instead)
+   */
+  async expandQuery(query) {
+    return this.rewriteQuery(query);
   }
 }
 

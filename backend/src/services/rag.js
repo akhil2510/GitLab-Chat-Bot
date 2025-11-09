@@ -95,7 +95,7 @@ class RAGService {
   /**
    * Main query processing with RAG
    */
-  async query(userQuery, sessionId = null, useQueryExpansion = false) {
+  async query(userQuery, sessionId = null, useQueryExpansion = true) {
     try {
       const startTime = Date.now();
       
@@ -121,14 +121,12 @@ class RAGService {
         };
       }
       
-      // Normalize query
-      const normalizedQuery = this.textProcessor.normalizeQuery(userQuery);
-      
-      // Optional: Query expansion for better retrieval
-      let queries = [normalizedQuery];
+      // ALWAYS use query rewriting for better understanding (default true)
+      let queries = [userQuery];
       if (useQueryExpansion) {
-        queries = await this.llmService.expandQuery(normalizedQuery);
-        logger.info(`Expanded query into ${queries.length} variations`);
+        // Rewrite query to understand user intent better
+        queries = await this.llmService.rewriteQuery(userQuery);
+        logger.info(`Query rewritten into ${queries.length} optimized search queries`);
       }
       
       // Retrieve context from all query variations
@@ -144,7 +142,7 @@ class RAGService {
       );
       
       // Rerank results
-      const rerankedResults = this.rerankResults(uniqueResults, normalizedQuery);
+      const rerankedResults = this.rerankResults(uniqueResults, userQuery);
       const topResults = rerankedResults.slice(0, config.rag.topK);
       
       // Get conversation history
