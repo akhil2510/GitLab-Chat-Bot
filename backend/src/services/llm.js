@@ -236,12 +236,13 @@ Remember: Accuracy over completeness. It's better to say "I don't know" than to 
 USER QUERY: "${userQuery}"
 
 YOUR TASK:
-1. Identify the core intent and key concepts
+1. Identify the core intent and key concepts (fix any obvious typos/misspellings)
 2. Generate 1-3 optimized search queries that would find relevant GitLab documentation
 3. ONLY use concepts that appear in the original query - do NOT add external knowledge
 4. Make queries more specific and searchable
 
 RULES:
+- Correct obvious typos/misspellings (e.g., "mege request" -> "merge request", "reveiw" -> "review")
 - Keep the same domain (GitLab)
 - Don't add information not in the original query
 - Focus on searchable keywords
