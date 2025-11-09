@@ -556,19 +556,6 @@
             background: rgba(102, 126, 234, 0.1);
         }
 
-        .history-clear {
-            padding: 8px 16px;
-            text-align: center;
-            color: #f44336;
-            font-size: 12px;
-            cursor: pointer;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .history-clear:hover {
-            background: rgba(244, 67, 54, 0.1);
-        }
-
         .send-button {
             padding: 12px 24px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -943,6 +930,11 @@
     </div>
 
     <script>
+        // Utility functions first
+        function generateSessionId() {
+            return 'session_' + Math.random().toString(36).substr(2, 9);
+        }
+
         // Environment-aware API URL
         const getApiUrl = () => {
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -1085,10 +1077,6 @@
             }, duration);
         }
 
-        function generateSessionId() {
-            return 'session_' + Math.random().toString(36).substr(2, 9);
-        }
-
         function updateCharCounter() {
             const input = document.getElementById('chatInput');
             const counter = document.getElementById('charCounter');
@@ -1133,8 +1121,6 @@
                 html += `<div class="history-item" onclick="selectHistory('${query.replace(/'/g, "\\'")}')">${escapeHtml(query)}</div>`;
             });
             
-            html += `<div class="history-clear" onclick="clearSearchHistory()">Clear History</div>`;
-            
             dropdown.innerHTML = html;
             dropdown.classList.add('show');
         }
@@ -1163,10 +1149,6 @@
                 dropdown.classList.remove('show');
             }
         });
-
-        function generateSessionId() {
-            return 'session_' + Math.random().toString(36).substr(2, 9);
-        }
 
         function handleKeyPress(event) {
             if (event.key === 'Enter' && !event.shiftKey) {

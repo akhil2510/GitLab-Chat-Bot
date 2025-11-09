@@ -15,26 +15,41 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
-// CORS configuration
-// Support a comma-separated list in FRONTEND_URL (e.g. "https://site1.com,https://site2.com")
 const rawOrigins = process.env.FRONTEND_URL || '';
 const allowedOrigins = rawOrigins.split(',').map(s => s.trim()).filter(Boolean);
 
+// Log CORS configuration on startup
+if (allowedOrigins.length > 0) {
+  logger.info(`CORS enabled for origins: ${allowedOrigins.join(', ')}`);
+} else {
+  logger.warn('CORS: No specific origins configured - allowing all origins');
+}
+
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (curl, server-to-server)
-    if (!origin) return callback(null, true);
+    // Allow requests with no origin (curl, server-to-server, mobile apps)
+    if (!origin) {
+      return callback(null, true);
+    }
 
-    // if no allowed origins configured, allow all origins (safe for quick testing)
-    if (allowedOrigins.length === 0) return callback(null, true);
+    // If no allowed origins configured, allow all origins (development mode)
+    if (allowedOrigins.length === 0) {
+      return callback(null, true);
+    }
 
+    // Check if origin is in allowed list
     if (allowedOrigins.indexOf(origin) !== -1) {
       return callback(null, true);
     }
-    return callback(new Error('CORS policy: origin not allowed'));
+    
+    // Log rejected origins
+    logger.warn(`CORS: Rejected origin ${origin}`);
+    return callback(new Error(`CORS policy: Origin ${origin} not allowed`));
   },
-  // only enable credentials when specific origins are configured
-  credentials: allowedOrigins.length > 0
+  credentials: allowedOrigins.length > 0,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400 // 24 hours
 }));
 
 // Body parsing middleware
