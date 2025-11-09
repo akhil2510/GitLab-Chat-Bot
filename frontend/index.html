@@ -774,7 +774,9 @@
                 if (suggestions.length > 0) {
                     suggestionsHtml = '<div class="suggestions" style="margin-top: 10px;"><strong>Try asking:</strong>';
                     suggestions.forEach(suggestion => {
-                        suggestionsHtml += `<div class="suggestion-chip" onclick="sendSuggestion('${escapeForJs(suggestion)}')">${escapeHtml(suggestion)}</div>`;
+                        // Escape single quotes for onclick attribute
+                        const escapedSuggestion = suggestion.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                        suggestionsHtml += `<div class="suggestion-chip" onclick="sendSuggestion('${escapedSuggestion}')">${escapeHtml(suggestion)}</div>`;
                     });
                     suggestionsHtml += '</div>';
                 }
