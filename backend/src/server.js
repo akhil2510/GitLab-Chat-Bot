@@ -94,30 +94,33 @@ app.use(errorHandler);
 // Start server
 const PORT = config.port;
 
-try {
-  const server = app.listen(PORT, () => {
-    logger.info(`Server running on port ${PORT} in ${config.env} mode`);
-    logger.info(`API available at http://localhost:${PORT}`);
-  });
-  
-  server.on('error', (error) => {
-    logger.error('Server error:', error);
+// Only start server if not in test mode
+if (config.env !== 'test') {
+  try {
+    const server = app.listen(PORT, () => {
+      logger.info(`Server running on port ${PORT} in ${config.env} mode`);
+      logger.info(`API available at http://localhost:${PORT}`);
+    });
+    
+    server.on('error', (error) => {
+      logger.error('Server error:', error);
+      process.exit(1);
+    });
+  } catch (error) {
+    logger.error('Failed to start server:', error);
     process.exit(1);
+  }
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    logger.info('SIGTERM signal received: closing HTTP server');
+    process.exit(0);
   });
-} catch (error) {
-  logger.error('Failed to start server:', error);
-  process.exit(1);
+
+  process.on('SIGINT', () => {
+    logger.info('SIGINT signal received: closing HTTP server');
+    process.exit(0);
+  });
 }
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM signal received: closing HTTP server');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT signal received: closing HTTP server');
-  process.exit(0);
-});
 
 export default app;
