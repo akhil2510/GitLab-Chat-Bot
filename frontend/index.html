@@ -897,11 +897,17 @@
         }
 
         // Environment-aware API URL
+        // To change: Update BACKEND_API_URL or deploy with Netlify env var
+        const BACKEND_API_URL = 'https://gitlabchatbot-private-1.onrender.com';
+        
         const getApiUrl = () => {
+            // Local development
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                 return 'http://localhost:3000/api/chat';
             }
-            return 'https://gitlabchatbot-private-1.onrender.com/api/chat';
+            
+            // Production - uses BACKEND_API_URL variable (easy to update)
+            return `${BACKEND_API_URL}/api/chat`;
         };
         
         const API_URL = getApiUrl();

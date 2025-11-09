@@ -1,15 +1,12 @@
 services:
   - type: web
     name: gitlabchatbot-private-1
-    runtime: node
+    runtime: docker
     plan: free
     region: oregon
     repo: https://github.com/akhil2510/gitLabChatBot_private
     branch: main
     autoDeploy: true
-    rootDir: backend
-    buildCommand: npm install
-    startCommand: npm start
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
@@ -29,4 +26,4 @@ services:
       - key: EMBEDDING_PROVIDER
         value: huggingface
       - key: FRONTEND_URL
-        value: https://merry-marshmallow-b20e6a.netlify.app
+        value: https://tangerine-cobbler-0e6db1.netlify.app
