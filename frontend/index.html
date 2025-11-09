@@ -85,7 +85,7 @@
 
         .clear-history-btn {
             position: absolute;
-            right: 80px;
+            right: 140px;
             top: 50%;
             transform: translateY(-50%);
             background: rgba(255, 255, 255, 0.2);
@@ -99,6 +99,25 @@
         }
 
         .clear-history-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .download-btn {
+            position: absolute;
+            right: 80px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .download-btn:hover {
             background: rgba(255, 255, 255, 0.3);
         }
 
@@ -290,10 +309,51 @@
             border-color: #f44336;
         }
 
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            color: #667eea;
+            padding: 4px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .copy-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+        }
+
+        .copy-btn.copied {
+            background: #4caf50;
+            color: white;
+            border-color: #4caf50;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .message.bot .message-content {
+            padding-top: 32px;
+        }
+
         .chat-input-container {
             padding: 20px;
             background: var(--container-bg);
             border-top: 1px solid var(--border-color);
+            position: relative;
         }
 
         .chat-input-wrapper {
@@ -340,6 +400,56 @@
 
         .chat-input:focus {
             border-color: #667eea;
+        }
+
+        .history-dropdown {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            right: 60px;
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 -4px 12px var(--shadow-color);
+            display: none;
+            z-index: 10;
+        }
+
+        .history-dropdown.show {
+            display: block;
+        }
+
+        .history-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            color: var(--text-primary);
+            transition: background 0.2s;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .history-clear {
+            padding: 8px 16px;
+            text-align: center;
+            color: #f44336;
+            font-size: 12px;
+            cursor: pointer;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .history-clear:hover {
+            background: rgba(244, 67, 54, 0.1);
         }
 
         .send-button {
@@ -447,6 +557,76 @@
             border-color: #667eea;
         }
 
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: white;
+            border-radius: 8px;
+            padding: 12px 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 250px;
+            max-width: 350px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.success {
+            border-left: 4px solid #4caf50;
+        }
+
+        .toast.error {
+            border-left: 4px solid #f44336;
+        }
+
+        .toast.info {
+            border-left: 4px solid #2196f3;
+        }
+
+        .toast-icon {
+            font-size: 20px;
+        }
+
+        .toast-message {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+        }
+
+        .toast-close:hover {
+            color: #333;
+        }
+
         /* Scrollbar styling */
         .chat-messages::-webkit-scrollbar {
             width: 6px;
@@ -467,11 +647,14 @@
     </style>
 </head>
 <body>
+    <div id="toastContainer" class="toast-container"></div>
+    
     <div class="chat-container">
         <div class="chat-header">
             <h1>🦊 GitLab AI Chatbot</h1>
             <p>Ask me anything about GitLab's Handbook & Direction</p>
             <button class="clear-history-btn" onclick="clearHistory()">🔄 Clear History</button>
+            <button class="download-btn" onclick="downloadConversation()">💾 Download</button>
             <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">🌙</button>
         </div>
 
@@ -490,6 +673,7 @@
         </div>
 
         <div class="chat-input-container">
+            <div id="historyDropdown" class="history-dropdown"></div>
             <div class="chat-input-wrapper">
                 <input 
                     type="text" 
@@ -498,6 +682,7 @@
                     placeholder="Ask about GitLab..." 
                     onkeypress="handleKeyPress(event)"
                     oninput="updateCharCounter()"
+                    onfocus="showSearchHistory()"
                     maxlength="500"
                 >
                 <button class="send-button" id="sendButton" onclick="sendMessage()">Send</button>
@@ -522,6 +707,7 @@
         let sessionId = generateSessionId();
         let currentStatus = '';
         let lastUserQuery = '';  // For keyboard navigation
+        let searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
         
         console.log('🚀 Using API URL:', API_URL);
 
@@ -545,6 +731,32 @@
             toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
         }
 
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: '✓',
+                error: '✗',
+                info: 'ℹ️'
+            };
+            
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type]}</span>
+                <div class="toast-message">${message}</div>
+                <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Auto-remove after duration
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
         function generateSessionId() {
             return 'session_' + Math.random().toString(36).substr(2, 9);
         }
@@ -563,6 +775,66 @@
                 counter.style.color = '#666';
             }
         }
+
+        function saveToSearchHistory(query) {
+            // Remove if already exists
+            searchHistory = searchHistory.filter(q => q !== query);
+            
+            // Add to front
+            searchHistory.unshift(query);
+            
+            // Keep only last 10
+            if (searchHistory.length > 10) {
+                searchHistory = searchHistory.slice(0, 10);
+            }
+            
+            localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+        }
+
+        function showSearchHistory() {
+            const dropdown = document.getElementById('historyDropdown');
+            const input = document.getElementById('chatInput');
+            
+            if (searchHistory.length === 0 || input.value.length > 0) {
+                dropdown.classList.remove('show');
+                return;
+            }
+            
+            let html = '';
+            searchHistory.forEach(query => {
+                html += `<div class="history-item" onclick="selectHistory('${query.replace(/'/g, "\\'")}')">${escapeHtml(query)}</div>`;
+            });
+            
+            html += `<div class="history-clear" onclick="clearSearchHistory()">Clear History</div>`;
+            
+            dropdown.innerHTML = html;
+            dropdown.classList.add('show');
+        }
+
+        function selectHistory(query) {
+            document.getElementById('chatInput').value = query;
+            document.getElementById('historyDropdown').classList.remove('show');
+            updateCharCounter();
+            document.getElementById('chatInput').focus();
+        }
+
+        function clearSearchHistory() {
+            if (confirm('Clear search history?')) {
+                searchHistory = [];
+                localStorage.removeItem('searchHistory');
+                document.getElementById('historyDropdown').classList.remove('show');
+                showToast('Search history cleared!', 'success');
+            }
+        }
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('historyDropdown');
+            const input = document.getElementById('chatInput');
+            if (e.target !== input && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
 
         function generateSessionId() {
             return 'session_' + Math.random().toString(36).substr(2, 9);
@@ -612,6 +884,59 @@
             }
         }
 
+        function downloadConversation() {
+            const messages = document.querySelectorAll('.message');
+            if (messages.length <= 1) {
+                showToast('No conversation to download yet!', 'info');
+                return;
+            }
+
+            let markdown = '# GitLab AI Chatbot Conversation\n\n';
+            markdown += `**Date:** ${new Date().toLocaleString()}\n\n`;
+            markdown += '---\n\n';
+
+            messages.forEach((msg, index) => {
+                if (index === 0) return; // Skip welcome message
+                
+                const isUser = msg.classList.contains('user');
+                const content = msg.querySelector('.message-content p');
+                
+                if (content) {
+                    if (isUser) {
+                        markdown += `### 👤 You\n${content.textContent}\n\n`;
+                    } else {
+                        const answer = msg.dataset.answer || content.textContent;
+                        const sources = msg.dataset.sources ? JSON.parse(msg.dataset.sources) : [];
+                        
+                        markdown += `### 🤖 GitLab AI\n${answer}\n\n`;
+                        
+                        if (sources.length > 0) {
+                            markdown += `**Sources:**\n`;
+                            sources.forEach(source => {
+                                markdown += `- [${source.title}](${source.url})\n`;
+                            });
+                            markdown += '\n';
+                        }
+                        
+                        markdown += '---\n\n';
+                    }
+                }
+            });
+
+            // Create and download file
+            const blob = new Blob([markdown], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gitlab-chat-${Date.now()}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast('Conversation downloaded successfully!', 'success');
+        }
+
         async function sendMessage() {
             const input = document.getElementById('chatInput');
             const sendButton = document.getElementById('sendButton');
@@ -622,7 +947,7 @@
 
             // Validate query length
             if (query.length > 500) {
-                addError('Query too long', 'Please limit your question to 500 characters.');
+                showToast('Query too long! Please limit to 500 characters.', 'error');
                 return;
             }
 
@@ -635,12 +960,15 @@
             
             const hasSuspicious = suspiciousPatterns.some(pattern => pattern.test(query));
             if (hasSuspicious) {
-                addError('Invalid query', 'Your question contains prohibited content. Please rephrase.');
+                showToast('Invalid query! Please rephrase your question.', 'error');
                 return;
             }
 
             // Store query for keyboard navigation
             lastUserQuery = query;
+            
+            // Save to search history
+            saveToSearchHistory(query);
 
             // Disable input
             input.disabled = true;
@@ -649,6 +977,9 @@
             // Add user message
             addMessage('user', query);
             input.value = '';
+
+            // Track start time for performance
+            const startTime = Date.now();
 
             // Show typing indicator with status
             const typingDiv = document.createElement('div');
@@ -691,15 +1022,17 @@
                 // Remove typing indicator
                 typingDiv.remove();
 
+                // Calculate response time
+                const responseTime = ((Date.now() - startTime) / 1000).toFixed(1);
+
                 if (data.success) {
-                    addBotResponse(data.data, query);
+                    addBotResponse(data.data, query, responseTime);
                 } else {
                     addError(data.error?.message || 'Failed to get response', data.error?.details);
                 }
             } catch (error) {
                 typingDiv.remove();
-                addError('Network error. Please check your connection and try again.', 
-                        'Make sure the backend server is running at ' + API_URL);
+                showToast('Network error! Check your connection.', 'error');
                 console.error('Error:', error);
             }
 
@@ -727,7 +1060,7 @@
             scrollToBottom();
         }
 
-        function addBotResponse(data, originalQuery) {
+        function addBotResponse(data, originalQuery, responseTime = null) {
             const messagesContainer = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message bot';
@@ -785,12 +1118,16 @@
             messageDiv.innerHTML = `
                 <div class="message-avatar">🤖</div>
                 <div class="message-content">
+                    <button class="copy-btn" onclick="copyToClipboard('${messageId}')">
+                        📋 Copy
+                    </button>
                     <p>${escapeHtml(data.answer)}</p>
                     ${sourcesHtml}
                     ${warningHtml}
                     ${suggestionsHtml}
                     <div>
                         <span class="confidence ${confidenceClass}">${confidenceClass.toUpperCase()} CONFIDENCE</span>
+                        ${responseTime ? `<span style="color: var(--text-secondary); font-size: 11px; margin-left: 8px;">⏱️ ${responseTime}s</span>` : ''}
                     </div>
                     <div class="feedback-buttons">
                         <button class="feedback-btn" data-rating="positive">
@@ -928,6 +1265,34 @@
 
         function generateMessageId() {
             return 'msg_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        async function copyToClipboard(messageId) {
+            const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (!messageDiv) return;
+            
+            const answer = messageDiv.dataset.answer;
+            const copyBtn = messageDiv.querySelector('.copy-btn');
+            
+            try {
+                await navigator.clipboard.writeText(answer);
+                
+                // Visual feedback
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = '✓ Copied!';
+                copyBtn.classList.add('copied');
+                
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            } catch (error) {
+                console.error('Failed to copy:', error);
+                copyBtn.textContent = '❌ Failed';
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 Copy';
+                }, 2000);
+            }
         }
 
         function scrollToBottom() {
