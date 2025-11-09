@@ -1,6 +1,7 @@
 import VectorStore from './vectorStore.js';
 import LLMService from './llm.js';
 import TextProcessor from '../utils/textProcessor.js';
+import ConversationStore from '../utils/conversationStore.js';
 import logger from '../utils/logger.js';
 import config from '../config/index.js';
 import NodeCache from 'node-cache';
@@ -11,7 +12,7 @@ class RAGService {
     this.llmService = new LLMService();
     this.textProcessor = new TextProcessor();
     this.cache = new NodeCache({ stdTTL: config.cache.ttl });
-    this.conversationStore = new Map(); // In-memory conversation storage
+    this.conversationStore = new ConversationStore(); // File-based persistence!
   }
 
   async initialize() {

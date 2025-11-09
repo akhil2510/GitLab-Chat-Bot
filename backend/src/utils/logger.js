@@ -28,37 +28,52 @@ const logger = winston.createLogger({
     logFormat
   ),
   transports: [
-    // Console transport
+    // Console transport (always enabled, especially important for Render)
     new winston.transports.Console({
       format: combine(
-        colorize(),
+        colorize({ all: process.env.NODE_ENV !== 'production' }), // Colorize in dev only
         logFormat
-      )
-    }),
-    // Error log file
-    new winston.transports.File({
+      ),
+      handleExceptions: true,
+      handleRejections: true
+    })
+  ],
+  exceptionHandlers: [
+    new winston.transports.Console({
+      format: logFormat
+    })
+  ],
+  rejectionHandlers: [
+    new winston.transports.Console({
+      format: logFormat
+    })
+  ]
+});
+
+// Only add file transports if not in test mode and logs directory exists
+if (process.env.NODE_ENV !== 'test') {
+  try {
+    // File transports (may fail on some hosting platforms like Render's free tier)
+    logger.add(new winston.transports.File({
       filename: path.join(config.logging.dir, 'error.log'),
       level: 'error',
       maxsize: 5242880, // 5MB
       maxFiles: 5
-    }),
-    // Combined log file
-    new winston.transports.File({
+    }));
+    
+    logger.add(new winston.transports.File({
       filename: path.join(config.logging.dir, 'combined.log'),
       maxsize: 5242880,
       maxFiles: 5
-    })
-  ],
-  exceptionHandlers: [
-    new winston.transports.File({
+    }));
+    
+    logger.add(new winston.transports.File({
       filename: path.join(config.logging.dir, 'exceptions.log')
-    })
-  ],
-  rejectionHandlers: [
-    new winston.transports.File({
-      filename: path.join(config.logging.dir, 'rejections.log')
-    })
-  ]
-});
+    }));
+  } catch (error) {
+    // Fallback to console-only logging if file system is not writable
+    console.warn('File logging disabled (filesystem not writable). Using console-only logging.');
+  }
+}
 
 export default logger;

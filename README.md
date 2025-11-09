@@ -28,8 +28,8 @@ An intelligent chatbot that helps GitLab employees and aspiring employees access
 
 ```
 ┌─────────────────┐
-│   Streamlit UI  │  ← Beautiful chat interface
-│    (Frontend)   │
+│  HTML/JS UI     │  ← Modern responsive web interface
+│  (Frontend)     │
 └────────┬────────┘
          │ HTTP/REST
          ▼
@@ -50,35 +50,36 @@ An intelligent chatbot that helps GitLab employees and aspiring employees access
 
 **Backend:**
 - Node.js + Express.js - RESTful API server
-- Google Gemini AI - LLM for response generation and embeddings
+- Google Gemini AI - LLM for response generation
+- HuggingFace Embeddings - Free embedding model (all-mpnet-base-v2)
 - **Pinecone** - Cloud vector database (managed, no server to maintain)
-- Winston - Structured logging
+- Winston - Structured logging with console fallback
 - Node-cache - In-memory caching
+- File-based persistence - Conversation storage
 
 **Frontend:**
-- Streamlit - Interactive web interface
-- Python Requests - API communication
+- HTML/CSS/JavaScript - Responsive web interface
+- No framework dependencies - Pure vanilla JS
 
 **Deployment:**
-- Vercel - Serverless backend hosting
-- Streamlit Cloud - Free frontend hosting
+- Render - Free backend hosting
+- Netlify - Free frontend hosting
 - Pinecone - Managed vector database
 
-**Why Pinecone over ChromaDB for deployment?**
-- ✅ Fully managed (no server to host)
-- ✅ Free tier (1M vectors)
-- ✅ Works with serverless (Vercel)
-- ✅ Persistent storage
-- ✅ Perfect for assignments/demos
+**Why This Stack?**
+- ✅ 100% FREE (no paid services required)
+- ✅ Production-ready reliability
+- ✅ Easy to deploy and maintain
+- ✅ Perfect for demos/assignments
 
 ## 📋 Prerequisites
 
 - Node.js v18+ and npm
-- Python 3.9+
 - **Google Gemini API key** ([Get free here](https://aistudio.google.com))
-- **Pinecone API key** ([Get free here](https://www.pinecone.io)) - for vector storage
+- **Pinecone API key** ([Get free here](https://www.pinecone.io))
+- **HuggingFace API key** ([Get free here](https://huggingface.co/settings/tokens))
 
-**Both are FREE for this project!**
+**All are 100% FREE for this project!**
 
 ## 🚀 Quick Start
 

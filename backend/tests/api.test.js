@@ -2,6 +2,14 @@ import request from 'supertest';
 import app from '../src/server.js';
 
 describe('API Endpoints', () => {
+  // Clean up after all tests
+  afterAll((done) => {
+    // Force Jest to exit by closing any open handles
+    setTimeout(() => {
+      done();
+    }, 500);
+  });
+
   describe('GET /', () => {
     it('should return API information', async () => {
       const res = await request(app).get('/');

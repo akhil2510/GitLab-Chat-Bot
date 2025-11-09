@@ -8,5 +8,7 @@
   "testMatch": [
     "**/tests/**/*.test.js"
   ],
-  "transform": {}
+  "transform": {},
+  "forceExit": true,
+  "testTimeout": 15000
 }

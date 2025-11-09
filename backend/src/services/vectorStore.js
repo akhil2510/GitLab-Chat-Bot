@@ -2,6 +2,7 @@ import { Pinecone } from '@pinecone-database/pinecone';
 import logger from '../utils/logger.js';
 import config from '../config/index.js';
 import EmbeddingService from './embeddings.js';
+import { retryWithBackoff, pollUntil, isRetryableError } from '../utils/retry.js';
 
 class VectorStore {
   constructor() {
@@ -45,9 +46,30 @@ class VectorStore {
           }
         });
         
-        // Wait for index to be ready
-        await new Promise(resolve => setTimeout(resolve, 60000)); // 60s wait
-        logger.info('Index created and ready');
+        // Wait for index to be ready with polling instead of hardcoded wait
+        logger.info('Waiting for index to be ready...');
+        const isReady = await pollUntil(
+          async () => {
+            try {
+              const indexDesc = await this.pinecone.describeIndex(config.pinecone.indexName);
+              return indexDesc.status?.ready === true;
+            } catch (error) {
+              logger.debug(`Index not ready yet: ${error.message}`);
+              return false;
+            }
+          },
+          {
+            interval: 5000, // Check every 5 seconds
+            timeout: 120000, // Max 2 minutes
+            description: 'Pinecone index initialization'
+          }
+        );
+        
+        if (!isReady) {
+          logger.warn('Index may not be fully ready, but continuing anyway');
+        } else {
+          logger.info('Index created and ready');
+        }
       }
       
       this.index = this.pinecone.index(config.pinecone.indexName);
@@ -131,7 +153,7 @@ class VectorStore {
   }
 
   /**
-   * Search for similar chunks
+   * Search for similar chunks with retry logic
    */
   async search(query, topK = config.rag.topK) {
     try {
@@ -140,15 +162,33 @@ class VectorStore {
         return [];
       }
 
-      // Generate query embedding
-      const queryEmbedding = await this.generateEmbedding(query);
+      // Generate query embedding with retry
+      const queryEmbedding = await retryWithBackoff(
+        () => this.generateEmbedding(query),
+        {
+          maxRetries: 3,
+          shouldRetry: isRetryableError,
+          onRetry: (error, attempt) => {
+            logger.warn(`Retrying embedding generation (attempt ${attempt}): ${error.message}`);
+          }
+        }
+      );
       
-      // Search in Pinecone
-      const results = await this.index.query({
-        vector: queryEmbedding,
-        topK: topK,
-        includeMetadata: true
-      });
+      // Search in Pinecone with retry
+      const results = await retryWithBackoff(
+        () => this.index.query({
+          vector: queryEmbedding,
+          topK: topK,
+          includeMetadata: true
+        }),
+        {
+          maxRetries: 3,
+          shouldRetry: isRetryableError,
+          onRetry: (error, attempt) => {
+            logger.warn(`Retrying Pinecone search (attempt ${attempt}): ${error.message}`);
+          }
+        }
+      );
       
       // Format results
       const formattedResults = results.matches.map(match => ({

@@ -6,10 +6,17 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import config from './config/index.js';
 import logger from './utils/logger.js';
+import MemoryMonitor from './utils/memoryMonitor.js';
 import chatRoutes from './routes/chat.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 const app = express();
+
+// Initialize memory monitor for Render free tier (512MB)
+let memoryMonitor;
+if (process.env.NODE_ENV !== 'test') {
+  memoryMonitor = new MemoryMonitor();
+}
 
 // Security middleware
 app.use(helmet());
@@ -126,16 +133,30 @@ if (config.env !== 'test') {
     process.exit(1);
   }
 
-  // Graceful shutdown
-  process.on('SIGTERM', () => {
-    logger.info('SIGTERM signal received: closing HTTP server');
+  // Graceful shutdown with conversation store cleanup
+  const shutdown = async (signal) => {
+    logger.info(`${signal} signal received: closing HTTP server`);
+    
+    // Import RAG service to access conversation store
+    const { default: RAGService } = await import('./services/rag.js');
+    const ragInstance = new RAGService();
+    
+    // Save all conversations before shutdown
+    if (ragInstance.conversationStore && ragInstance.conversationStore.shutdown) {
+      ragInstance.conversationStore.shutdown();
+    }
+    
+    // Shutdown memory monitor
+    if (memoryMonitor && memoryMonitor.shutdown) {
+      memoryMonitor.shutdown();
+    }
+    
+    logger.info('Graceful shutdown complete');
     process.exit(0);
-  });
+  };
 
-  process.on('SIGINT', () => {
-    logger.info('SIGINT signal received: closing HTTP server');
-    process.exit(0);
-  });
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 export default app;
