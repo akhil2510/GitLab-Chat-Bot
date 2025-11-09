@@ -146,7 +146,6 @@ Remember: Accuracy over completeness. It's better to say "I don't know" than to 
    */
   assessConfidence(response, context) {
     const lowerResponse = response.toLowerCase();
-    const lowerContext = context.toLowerCase();
     
     // Check for explicit uncertainty phrases
     const uncertaintyPhrases = [

@@ -1,16 +1,20 @@
 services:
   - type: web
-    name: gitlab-chatbot-backend
+    name: gitlabchatbot-private-1
     runtime: node
     plan: free
     region: oregon
     repo: https://github.com/akhil2510/gitLabChatBot_private
     branch: main
+    autoDeploy: true  # Enable auto-deploy on push
     buildCommand: cd backend && npm install
     startCommand: cd backend && npm start
+    healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
       - key: GEMINI_API_KEY
         sync: false
       - key: PINECONE_API_KEY
@@ -23,3 +27,5 @@ services:
         sync: false
       - key: EMBEDDING_PROVIDER
         value: huggingface
+      - key: FRONTEND_URL
+        value: https://merry-marshmallow-b20e6a.netlify.app
